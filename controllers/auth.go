@@ -119,12 +119,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func generateJWTToken(userID uint) (string, error) {
-	// Create a new JWT token
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userID": userID,
 	})
 
-	// Sign the token with a secret key
 	secretKey := []byte("your-secret-key")
 	return token.SignedString(secretKey)
 }

@@ -17,6 +17,7 @@ func New() http.Handler {
 
 	users := router.PathPrefix("/users").Subrouter()
 	users.HandleFunc("/register", Register).Methods("POST")
+	users.HandleFunc("/login", Login).Methods("POST")
 
 	return router
 }
