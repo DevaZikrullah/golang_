@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"test/middleware"
 	"test/models"
 	"test/utils"
 	"time"
@@ -121,6 +122,30 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
+}
+
+func GetInfo(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// Extract userID from JWT token
+	userID, err := middleware.GetUserIdFromToken(r)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	// Retrieve user information with preloaded Quests relationship
+	var user models.Users
+	if err := models.DB.Preload("Quest").Where("id = ?", userID).First(&user).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utils.RespondWithError(w, http.StatusNotFound, "User not found")
+			return
+		}
+		utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	json.NewEncoder(w).Encode(user)
 }
 
 func generateJWTToken(userID uint) (string, error) {

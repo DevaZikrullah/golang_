@@ -16,6 +16,7 @@ func New() http.Handler {
 	api.HandleFunc("/quest", CreateQuest).Methods("POST")
 	api.HandleFunc("/quest/{id}", UpdateQuest).Methods("PUT")
 	api.HandleFunc("/quest/{id}", DeleteQuest).Methods("DELETE")
+	api.HandleFunc("/get-info", GetInfo).Methods("GET")
 
 	users := router.PathPrefix("/users").Subrouter()
 	users.HandleFunc("/register", Register).Methods("POST")
