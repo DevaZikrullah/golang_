@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"test/middleware"
 	"test/models"
 	"test/utils"
 
@@ -45,12 +46,26 @@ type QuestInput struct {
 func CreateQuest(w http.ResponseWriter, r *http.Request) {
 	var input QuestInput
 
-	body, _ := ioutil.ReadAll(r.Body)
-	_ = json.Unmarshal(body, &input)
+	userID, err := middleware.GetUserIdFromToken(r)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	err = json.Unmarshal(body, &input)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
 
 	validate = validator.New()
-	err := validate.Struct(input)
-
+	err = validate.Struct(input)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusBadRequest, "Validation Error")
 		return
@@ -60,14 +75,17 @@ func CreateQuest(w http.ResponseWriter, r *http.Request) {
 		Title:       input.Title,
 		Description: input.Description,
 		Reward:      input.Reward,
+		UserID:      userID,
 	}
 
-	models.DB.Create(quest)
+	err = models.DB.Create(quest).Error
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create quest")
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-
 	json.NewEncoder(w).Encode(quest)
-
 }
 
 func UpdateQuest(w http.ResponseWriter, r *http.Request) {
