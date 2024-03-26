@@ -127,16 +127,14 @@ func Login(w http.ResponseWriter, r *http.Request) {
 func GetInfo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	// Extract userID from JWT token
 	userID, err := middleware.GetUserIdFromToken(r)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
-	// Retrieve user information with preloaded Quests relationship
 	var user models.Users
-	if err := models.DB.Preload("Quest").Where("id = ?", userID).First(&user).Error; err != nil {
+	if err := models.DB.Preload("Quests").Where("id = ?", userID).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.RespondWithError(w, http.StatusNotFound, "User not found")
 			return
@@ -149,7 +147,7 @@ func GetInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func generateJWTToken(userID uint) (string, error) {
-	expirationTime := time.Now().Add(time.Duration(12) * time.Hour)
+	expirationTime := time.Now().Add(time.Duration(6) * time.Hour)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userID": userID,
