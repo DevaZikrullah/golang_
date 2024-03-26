@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"test/models"
 	"test/utils"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"gorm.io/gorm"
@@ -123,9 +124,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func generateJWTToken(userID uint) (string, error) {
+	expirationTime := time.Now().Add(time.Duration(12) * time.Hour)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userID": userID,
+		"exp":    expirationTime.Unix(),
 	})
 
 	secretKey := []byte("your-secret-key")
