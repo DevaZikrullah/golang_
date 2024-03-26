@@ -20,7 +20,7 @@ func main() {
 		Handler: handler,
 	}
 
-	fmt.Print("Running on port", server.Addr)
+	fmt.Print("Running on port ", server.Addr)
 
 	models.ConnectDatabase()
 
