@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"test/middleware"
@@ -135,5 +136,48 @@ func DeleteQuest(w http.ResponseWriter, r *http.Request) {
 	models.DB.Delete(&quest)
 
 	w.WriteHeader(http.StatusNoContent)
+	json.NewEncoder(w).Encode(quest)
+}
+
+type InputQuestComplete struct {
+	QuestId int `json:"quest_id" validate:"required"`
+	UserId  int `json:"user_id" validate:"required"`
+}
+
+func QuestComplete(w http.ResponseWriter, r *http.Request) {
+	var input InputQuestComplete
+	var quest models.Quest
+
+	_, err := middleware.GetUserIdFromToken(r)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	err = json.Unmarshal(body, &input)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+
+	validate = validator.New()
+	err = validate.Struct(input)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Validation Error")
+		return
+	}
+
+	if err := models.DB.Where("id = ?", input.QuestId).First(&quest).Error; err != nil {
+		utils.RespondWithError(w, http.StatusNotFound, "Quest not found")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(quest)
 }
