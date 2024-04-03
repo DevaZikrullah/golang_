@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
+	"log"
 	"test/controllers"
 	"test/models"
 
@@ -20,7 +20,8 @@ func main() {
 		Handler: handler,
 	}
 
-	fmt.Print("Running on port ", server.Addr)
+	// fmt.Print("Running on port ", server.Addr)
+	log.Println("Server started on :8080")
 
 	models.ConnectDatabase()
 

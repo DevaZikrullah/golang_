@@ -186,13 +186,10 @@ func QuestComplete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update user's points
 	user.Point += quest.Reward
 
-	// Mark quest as completed by user
 	user.CompletedByQuest = append(user.CompletedByQuest, quest)
 
-	// Save changes to the database
 	if err := models.DB.Save(&user).Error; err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to update user")
 		return
