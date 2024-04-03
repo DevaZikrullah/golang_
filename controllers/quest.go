@@ -147,8 +147,9 @@ type InputQuestComplete struct {
 func QuestComplete(w http.ResponseWriter, r *http.Request) {
 	var input InputQuestComplete
 	var quest models.Quest
+	var user models.Users
 
-	_, err := middleware.GetUserIdFromToken(r)
+	userID, err := middleware.GetUserIdFromToken(r)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusUnauthorized, "Unauthorized")
 		return
@@ -173,11 +174,30 @@ func QuestComplete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Find the quest
 	if err := models.DB.Where("id = ?", input.QuestId).First(&quest).Error; err != nil {
 		utils.RespondWithError(w, http.StatusNotFound, "Quest not found")
 		return
 	}
 
+	// Find the user
+	if err := models.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+		utils.RespondWithError(w, http.StatusNotFound, "User not found")
+		return
+	}
+
+	// Update user's points
+	user.Point += quest.Reward
+
+	// Mark quest as completed by user
+	user.CompletedByQuest = append(user.CompletedByQuest, quest)
+
+	// Save changes to the database
+	if err := models.DB.Save(&user).Error; err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to update user")
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(quest)
+	json.NewEncoder(w).Encode(user)
 }

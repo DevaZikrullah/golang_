@@ -8,6 +8,7 @@ type Users struct {
 	Email            string    `json:"email"`
 	Password         string    `json:"password"`
 	Token            string    `json:"token"`
+	Point            int       `json:point`
 	Quests           []Quest   `json:"quests" gorm:"foreignkey:UserID"`
 	CompletedByQuest []Quest   `gorm:"many2many:quest_completed"`
 	CreatedAt        time.Time `json:"created_at"`
