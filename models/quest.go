@@ -11,3 +11,10 @@ type Quest struct {
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
+
+type CompletedQuest struct {
+	ID          uint `gorm:"primary_key"`
+	UserID      uint
+	QuestID     uint
+	CompletedAt time.Time
+}

@@ -146,13 +146,13 @@ func GetInfo(w http.ResponseWriter, r *http.Request) {
 
 	userID, err := middleware.GetUserIdFromToken(r)
 	if err != nil {
-		logging.Warn("Unathorized")
+		logging.Warn("Unauthorized")
 		utils.RespondWithError(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	var user models.Users
-	if err := models.DB.Preload("Quests").Where("id = ?", userID).First(&user).Error; err != nil {
+	if err := models.DB.Preload("Quests").Preload("CompletedQuests").Where("id = ?", userID).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			logging.Warn("User not found")
 			utils.RespondWithError(w, http.StatusNotFound, "User not found")

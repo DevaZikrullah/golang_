@@ -5,12 +5,15 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"test/logging"
 	"test/middleware"
 	"test/models"
 	"test/utils"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 )
 
 var validate *validator.Validate
@@ -31,6 +34,7 @@ func GetQuest(w http.ResponseWriter, r *http.Request) {
 	var quest models.Quest
 
 	if err := models.DB.Where("id = ?", id).First(&quest).Error; err != nil {
+		logging.Warn("Quest not found")
 		utils.RespondWithError(w, http.StatusNotFound, "Quest not found")
 		return
 	}
@@ -49,18 +53,21 @@ func CreateQuest(w http.ResponseWriter, r *http.Request) {
 
 	userID, err := middleware.GetUserIdFromToken(r)
 	if err != nil {
+		logging.Error("Unauthorized", zap.Error(err))
 		utils.RespondWithError(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
+		logging.Error("Internal Server Error", zap.Error(err))
 		utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
 	err = json.Unmarshal(body, &input)
 	if err != nil {
+		logging.Error("Invalid request body", zap.Error(err))
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
@@ -68,6 +75,7 @@ func CreateQuest(w http.ResponseWriter, r *http.Request) {
 	validate = validator.New()
 	err = validate.Struct(input)
 	if err != nil {
+		logging.Error(err.Error(), zap.Error(err))
 		utils.RespondWithError(w, http.StatusBadRequest, "Validation Error")
 		return
 	}
@@ -81,6 +89,7 @@ func CreateQuest(w http.ResponseWriter, r *http.Request) {
 
 	err = models.DB.Create(quest).Error
 	if err != nil {
+		logging.Error(err.Error(), zap.Error(err))
 		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create quest")
 		return
 	}
@@ -96,6 +105,7 @@ func UpdateQuest(w http.ResponseWriter, r *http.Request) {
 	var quest models.Quest
 
 	if err := models.DB.Where("id = ?", id).First(&quest).Error; err != nil {
+		logging.Warn("Quest not found")
 		utils.RespondWithError(w, http.StatusNotFound, "Quest not found")
 		return
 	}
@@ -109,6 +119,7 @@ func UpdateQuest(w http.ResponseWriter, r *http.Request) {
 	err := validate.Struct(input)
 
 	if err != nil {
+		logging.Error(err.Error(), zap.Error(err))
 		utils.RespondWithError(w, http.StatusBadRequest, "Validation Error")
 		return
 	}
@@ -129,6 +140,7 @@ func DeleteQuest(w http.ResponseWriter, r *http.Request) {
 	var quest models.Quest
 
 	if err := models.DB.Where("id = ?", id).First(&quest).Error; err != nil {
+		logging.Warn("Quest not fouund")
 		utils.RespondWithError(w, http.StatusNotFound, "Quest not found")
 		return
 	}
@@ -151,18 +163,21 @@ func QuestComplete(w http.ResponseWriter, r *http.Request) {
 
 	userID, err := middleware.GetUserIdFromToken(r)
 	if err != nil {
+		logging.Error("Unauthorized", zap.Error(err))
 		utils.RespondWithError(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
+		logging.Error("Internal Server Error", zap.Error(err))
 		utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
 	err = json.Unmarshal(body, &input)
 	if err != nil {
+		logging.Error("Invalid Json", zap.Error(err))
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
@@ -170,27 +185,36 @@ func QuestComplete(w http.ResponseWriter, r *http.Request) {
 	validate = validator.New()
 	err = validate.Struct(input)
 	if err != nil {
+		logging.Error("Validation Erorr", zap.Error(err))
 		utils.RespondWithError(w, http.StatusBadRequest, "Validation Error")
 		return
 	}
 
 	// Find the quest
 	if err := models.DB.Where("id = ?", input.QuestId).First(&quest).Error; err != nil {
+		logging.Warn("Quest not found")
 		utils.RespondWithError(w, http.StatusNotFound, "Quest not found")
 		return
 	}
 
 	// Find the user
 	if err := models.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+		logging.Warn("User not found")
 		utils.RespondWithError(w, http.StatusNotFound, "User not found")
 		return
 	}
 
 	user.Point += quest.Reward
 
-	user.CompletedByQuest = append(user.CompletedByQuest, quest)
+	completeQuest := &models.CompletedQuest{
+		UserID:      userID,
+		QuestID:     quest.ID,
+		CompletedAt: time.Now(),
+	}
 
+	user.AppendCompletedQuest(*completeQuest)
 	if err := models.DB.Save(&user).Error; err != nil {
+		logging.Error("Failed to update user", zap.Error(err))
 		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to update user")
 		return
 	}
