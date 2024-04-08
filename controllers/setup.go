@@ -23,5 +23,6 @@ func New() http.Handler {
 	users.HandleFunc("/register", Register).Methods("POST")
 	users.HandleFunc("/login", Login).Methods("POST")
 
+	router.HandleFunc("/login", LoginHTML).Methods("GET")
 	return router
 }

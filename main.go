@@ -21,7 +21,7 @@ func main() {
 	}
 
 	// fmt.Print("Running on port ", server.Addr)
-	log.Println("Server started on :8080")
+	log.Println("Server started on :8008")
 
 	models.ConnectDatabase()
 
