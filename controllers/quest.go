@@ -190,14 +190,12 @@ func QuestComplete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Find the quest
 	if err := models.DB.Where("id = ?", input.QuestId).First(&quest).Error; err != nil {
 		logging.Warn("Quest not found")
 		utils.RespondWithError(w, http.StatusNotFound, "Quest not found")
 		return
 	}
 
-	// Find the user
 	if err := models.DB.Where("id = ?", userID).First(&user).Error; err != nil {
 		logging.Warn("User not found")
 		utils.RespondWithError(w, http.StatusNotFound, "User not found")

@@ -19,6 +19,9 @@ func New() http.Handler {
 	api.HandleFunc("/get-info", GetInfo).Methods("GET")
 	api.HandleFunc("/quest-complete", QuestComplete).Methods("POST")
 
+	api.HandleFunc("/uom", GetAllUom).Methods("GET")
+	api.HandleFunc("/uom/create", CreateUom).Methods("POST")
+
 	users := router.PathPrefix("/users").Subrouter()
 	users.HandleFunc("/register", Register).Methods("POST")
 	users.HandleFunc("/login", Login).Methods("POST")
